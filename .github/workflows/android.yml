@@ -59,14 +59,7 @@ jobs:
           profile: pixel_8
           emulator-boot-timeout: 1200
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel ${{ steps.emulator-acceleration.outputs.mode }}
-          script: |
-            appium --log appium-server.log &
-            for i in $(seq 1 45); do
-              if curl -fsS http://127.0.0.1:4723/status | jq -e '.value.ready == true' >/dev/null; then break; fi
-              sleep 2
-            done
-            curl -fsS http://127.0.0.1:4723/status | jq -e '.value.ready == true' >/dev/null || exit 1
-            bash gradlew test -PtestGroup=smoke --no-daemon
+          script: bash scripts/run-android-smoke.sh
       - name: Optional AI failure triage
         if: failure()
         env:

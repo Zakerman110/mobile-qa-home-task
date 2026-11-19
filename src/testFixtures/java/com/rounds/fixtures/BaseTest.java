@@ -6,6 +6,7 @@ import com.rounds.core.DeviceLogs;
 import com.rounds.core.Diagnostics;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.appmanagement.ApplicationState;
+import io.qameta.allure.Allure;
 import org.testng.IHookCallBack;
 import org.testng.IHookable;
 import org.testng.ITestResult;
@@ -13,6 +14,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -78,9 +81,25 @@ public abstract class BaseTest implements IHookable {
                 .map(parameter -> ((Enum<?>) parameter).name())
                 .collect(Collectors.joining("-"));
             String testName = result.getName() + (action.isEmpty() ? "" : "-" + action);
-            Diagnostics.save(testName, driver, logs, failure);
+            Path folder = Diagnostics.save(testName, driver, logs, failure);
+            if (folder != null && Allure.getLifecycle().getCurrentTestCase().isPresent()) {
+                attachToAllure(folder.resolve("screenshot.png"), "image/png", ".png");
+                attachToAllure(folder.resolve("logcat.txt"), "text/plain", ".txt");
+                attachToAllure(folder.resolve("ui-hierarchy.xml"), "application/xml", ".xml");
+            }
         }
         return failure;
+    }
+
+    private static void attachToAllure(Path file, String mediaType, String extension) {
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
+        try (var content = Files.newInputStream(file)) {
+            Allure.addAttachment(file.getFileName().toString(), mediaType, content, extension);
+        } catch (Exception e) {
+            System.err.println("Unable to attach " + file.getFileName() + " to Allure: " + e);
+        }
     }
 
     @AfterMethod(alwaysRun = true)

@@ -15,6 +15,7 @@ java {
 
 dependencies {
     def seleniumVersion = '4.50.0'
+    def allureVersion = '2.35.2'
     api 'io.appium:java-client:11.0.0'
     implementation "org.seleniumhq.selenium:selenium-support:${seleniumVersion}"
     constraints {
@@ -25,11 +26,20 @@ dependencies {
     }
 
     testFixturesImplementation 'org.testng:testng:7.12.0'
+    testFixturesImplementation "io.qameta.allure:allure-java-commons:${allureVersion}"
     testImplementation 'org.testng:testng:7.12.0'
+    testRuntimeOnly "io.qameta.allure:allure-testng:${allureVersion}"
     testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 }
 
+def allureResults = layout.buildDirectory.dir('allure-results')
+def cleanAllureResults = tasks.register('cleanAllureResults', Delete) {
+    delete allureResults
+}
+
 test {
+    dependsOn cleanAllureResults
+    systemProperty 'allure.results.directory', allureResults.get().asFile.absolutePath
     def testGroup = providers.gradleProperty('testGroup').orNull
     useTestNG {
         if (testGroup != null) {

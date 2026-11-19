@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public final class Diagnostics {
     private Diagnostics() {}
 
-    public static void save(String testName, AndroidDriver driver, String log, Throwable failure) {
+    public static Path save(String testName, AndroidDriver driver, String log, Throwable failure) {
         try {
             Path root = Files.createDirectories(Config.artifactRoot());
             String prefix = testName.replaceAll("[^a-zA-Z0-9._-]", "_") + "-";
@@ -37,7 +37,11 @@ public final class Diagnostics {
                 }
             }
             System.err.println("Failure artifacts: " + folder);
-        } catch (Exception e) { System.err.println("Failed to save diagnostics: " + e); }
+            return folder;
+        } catch (Exception e) {
+            System.err.println("Failed to save diagnostics: " + e);
+            return null;
+        }
     }
 
     public static String findAppCrashOrAnr(String logs, String appPackage) {

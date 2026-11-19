@@ -60,6 +60,37 @@ jobs:
           emulator-boot-timeout: 1200
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel ${{ steps.emulator-acceleration.outputs.mode }}
           script: bash scripts/run-android-smoke.sh
+      - name: Summarize Android smoke tests
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          suites = [
+              ElementTree.parse(file).getroot()
+              for file in Path("build/test-results/test").glob("TEST-*.xml")
+          ]
+          print("### Android smoke tests\n")
+          if not suites:
+              print("No test results were produced. See the job logs.")
+          else:
+              total, failures, errors, skipped = (
+                  sum(int(suite.get(key, 0)) for suite in suites)
+                  for key in ("tests", "failures", "errors", "skipped")
+              )
+              failed = failures + errors
+              print(f"**{total - failed - skipped}/{total} passed** · {failed} failed · {skipped} skipped")
+          PY
+      - name: Generate Allure report
+        if: always() && hashFiles('build/allure-results/*-result.json') != ''
+        run: npx --yes allure-commandline@2.42.0 generate build/allure-results --clean --single-file --output build/allure-report
+      - name: Upload Allure report
+        if: always() && hashFiles('build/allure-report/index.html') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: build/allure-report/index.html
       - name: Optional AI failure triage
         if: failure()
         env:

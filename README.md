@@ -31,6 +31,16 @@ The default run includes both smoke and toast tests. To run one group, use `.\gr
 
 Find HTML test results in `build/reports/tests/test/index.html` and failure artifacts in `artifacts/<test-name>-<unique-id>/`. Parameterized billing tests include the action name in their artifact directory.
 
+### Allure report
+
+After running tests, generate a self-contained HTML report from the latest run:
+
+```powershell
+npx --yes allure-commandline@2.42.0 generate build/allure-results --clean --single-file --output build/allure-report
+```
+
+Open `build/allure-report/index.html`. Failed tests include the available screenshot, logcat, and UI hierarchy when Allure has an active test case. The original files are also saved under `artifacts/`.
+
 ## Configuration
 
 Settings use a nonblank uppercase environment variable first, then the uppercase `-D` property, then the lowercase key in `src/main/resources/config.properties`. For example, use the `APK_PATH` environment variable or `-DAPK_PATH` to override `apk_path`.
@@ -60,7 +70,7 @@ Settings use a nonblank uppercase environment variable first, then the uppercase
 
 `.github/workflows/android.yml` downloads the APK from the HTTPS URL in the `APK_PATH` repository secret, runs the smoke group on an emulator, and uploads reports and diagnostics. The Android job fails if the APK is missing. For pull requests from forks, the Android job is skipped and the workflow summary explains why.
 
-The suite has run locally on the Google Play emulator. The GitHub-hosted run is still unverified and needs an accessible APK URL in `APK_PATH`.
+The run summary shows the smoke test totals. When test results are produced, download the `allure-report` artifact from the run's **Summary** page and open `index.html`. GitHub Actions generates the report after passing and failing test runs.
 
 ## Optional AI in the workflow
 

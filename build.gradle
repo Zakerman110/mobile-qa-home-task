@@ -1,0 +1,56 @@
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    def seleniumVersion = '4.50.0'
+    api 'io.appium:java-client:11.0.0'
+    implementation "org.seleniumhq.selenium:selenium-support:${seleniumVersion}"
+    constraints {
+        api('org.seleniumhq.selenium:selenium-api') {
+            version { strictly seleniumVersion }
+            because 'Appium Java Client 11.0.0 is matched with Selenium 4.50.0'
+        }
+    }
+
+    testFixturesImplementation 'org.testng:testng:7.12.0'
+    testImplementation 'org.testng:testng:7.12.0'
+    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+}
+
+test {
+    def testGroup = providers.gradleProperty('testGroup').orNull
+    useTestNG {
+        if (testGroup != null) {
+            includeGroups testGroup
+        }
+    }
+    def config = new Properties()
+    def configFile = layout.projectDirectory.file('src/main/resources/config.properties')
+    config.load(new ByteArrayInputStream(providers.fileContents(configFile).asBytes.get()))
+    config.stringPropertyNames().each { key ->
+        def name = key.toUpperCase(Locale.ROOT)
+        def override = providers.systemProperty(name).orNull
+        if (override != null) {
+            systemProperty name, override
+        }
+    }
+    maxParallelForks = 1
+    // Device state and Appium are external to Gradle's input tracking.
+    outputs.upToDateWhen { false }
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+}

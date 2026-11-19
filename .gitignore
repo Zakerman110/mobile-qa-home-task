@@ -1,0 +1,6 @@
+/.gradle/
+/build/
+/artifacts/
+/.idea/
+*.iml
+/app/*.apk
